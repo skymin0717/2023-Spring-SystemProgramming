@@ -24,8 +24,8 @@ int init(int argc, char *argv[]){
   struct sockaddr_in serv_addr;
   memset(&serv_addr, 0x00, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_port = htons(8080);
-  serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+  serv_addr.sin_port = htons(atoi(argv[4]));
+  serv_addr.sin_addr.s_addr = inet_addr(argv[2]);
   /* Your Code */
   
   
