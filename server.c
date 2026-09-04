@@ -114,13 +114,16 @@ int main(int argc, char *argv[]){
       /* Your Code */
       //파일 이름 저장하기 f_name
       memset(buff, 0x00, sizeof(buff));
-      if((recv_l = recv(clnt_sock, buff, 100, 0)) == -1) 
-        return False;
-      char f_name [100] = {};
-      for(int i = 0; buff[i] != '\0'; i++){
-          f_name[i] = buff[i];
+      char f_name[100] = {};
+      int i = 0;
+      while (1) {
+          if (i >= (int)sizeof(f_name) - 1) return False;
+          recv_l = recv(clnt_sock, &f_name[i], 1, 0);
+          if (recv_l <= 0) return False;
+          if (f_name[i] == '\0') break;
+          i++;
       }
-      char d [] = "/elice/project_file/server_files";
+      char d [] =  "server_files";
       char pathFile[260] = {};
       sprintf(pathFile, "%s/%s", d, f_name);
       FILE* fp = fopen(pathFile, "rb");
@@ -142,17 +145,18 @@ int main(int argc, char *argv[]){
       if(write(clnt_sock, cmd, 4) == -1) return False;
 
       int read_num = 1;
-      int i = 1;
-      if(fp){
-            while(read_num > 0){
-                memset(buff, 0x00, sizeof(buff));
-                read_num = fread(buff, sizeof(char), 256, fp);
-                if((send_l = send(clnt_sock, buff, read_num, 0))==-1) return False;
-                i++;
-            }
-    fclose(fp);
-    }
-    remove(pathFile);
+      while (1) {
+          int read_num = fread(buff, 1, 256, fp);
+          if (read_num <= 0) break;
+          int sent = 0;
+          while (sent < read_num) {
+              int n = send(clnt_sock, buff + sent, read_num - sent, 0);
+              if (n <= 0) { fclose(fp); return False; }
+              sent += n;
+          }
+      }
+      fclose(fp);
+      remove(pathFile);
     }
 
     // Terminate
