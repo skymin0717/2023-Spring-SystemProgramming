@@ -26,7 +26,6 @@ int init(int argc, char *argv[]){
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_port = htons(8080);
   serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-  //printf("%s\n", argv[4]);
   /* Your Code */
   
   
@@ -46,7 +45,6 @@ void ls(){
   /* Your Code */
   char s[1024] = {};
   getcwd(s,1024);
-  //printf("%s\n", s);
   
   DIR* dr;
   struct dirent *d;
@@ -65,7 +63,6 @@ void ls(){
 void changedir(const char* name){ 
   /* Your Code */
   chdir(name);
-  //printf("change %s\n", name);
 }
 
 // Implement "Upload" function.
@@ -82,7 +79,6 @@ int upload(int sock, const char* file_name){
     fileLen=ftell(fp);
     fseek(fp, 0, SEEK_SET);
     if(fileLen <= 0) return False;
-    //printf("%d\n", fileLen);
     
     char cmd[4];
     int a = fileLen;
@@ -103,15 +99,11 @@ int upload(int sock, const char* file_name){
         while(read_num > 0){
             memset(buff, 0x00, sizeof(buff));
             read_num = fread(buff, sizeof(char), 256, fp);
-            //printf("%ld ",ftell(fp));
             if((send_l = send(sock, buff, read_num, 0))==-1)
                 return False;
-            //printf(" %d\n",read_num);
-            //fileLen -= read_num;
             i++;
         }
         sleep(1);
-        //return True;
     }
     else
         return False;
@@ -143,7 +135,6 @@ int download(int sock, const char* file_name){
     f_l = ((f_l<<8) + (buff[2]&0xff));
     f_l = ((f_l<<8) + (buff[1]&0xff));
     f_l = ((f_l<<8) + (buff[0]&0xff));
-    //printf("%d\n", (f_l));
 
     if(f_l>0){
       char d [] = "/elice/project_file/client_files";
@@ -156,39 +147,27 @@ int download(int sock, const char* file_name){
       if ((fp==NULL)) return False;
       int f_ll = f_l;
       for(int r = 0; r < (f_ll/256); r++){
-        //printf("%d %d\n",i, recv_l);
-        //int f = fputs(buff, fp);
-        //printf("%ld ",ftell(fp));
         memset(buff, 0x00, sizeof(buff));
         recv_l = recv(sock, buff, 256, 0);
         for(int k = 0 ; k < sizeof(buff); k++){
             fputc(buff[k], fp);
-            //printf("%d %c\n",k, buff[k]);
         }
-        //printf("%d\n",recv_l);
-        //printf("%ld ",ftell(fp));
         f_l = f_l - 256;
-        //printf("fl %d\n", f_l);
         i++;
       }
-      //printf("f_fl %d\n", f_l);
       memset(buff, 0x00, sizeof(buff));
       recv_l = recv(sock, buff, f_l, 0);
       if(f_l >= 0){
         for (int j = 0; j<f_l; j++){
           fputc(buff[j], fp);
-          //printf("%d %d %c\n", recv_l,j, buff[j]);
         }          
       }
       sleep(1);
       fseek(fp, 0, SEEK_END);
       size_t fileLen=ftell(fp);
       fseek(fp, 0, SEEK_SET);
-      //printf("%ld\n", fileLen);
       fclose(fp);
-      return True;
-      //printf("%d", remove(pathFile));
-      //break;          
+      return True;        
     }
     else
         return False;

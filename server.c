@@ -67,7 +67,6 @@ int main(int argc, char *argv[]){
   while(True){
       memset(buff, 0x00, sizeof(buff));
       if((recv_l = recv(clnt_sock, buff, 1, 0)) == -1) return False;
-      //printf("%s\n", buff);
   
     // upload
     if(!strcmp(buff, "u")){
@@ -79,10 +78,8 @@ int main(int argc, char *argv[]){
       int name_l;
       for(int i = 0; buff[i] != '\0'; i++){
           f_name[i] = buff[i];
-          //printf("%d %d\n",i,  buff[i]);
           name_l = i;
       }
-      //printf("%d\n", name_l);
       //memset(buff, 0x00, sizeof(buff));
       //recv_l = recv(clnt_sock, buff, 4, 0);
       //파일의 전체 크기 받기
@@ -90,11 +87,9 @@ int main(int argc, char *argv[]){
       f_l = ((f_l<<8) + (buff[name_l+4]&0xff));
       f_l = ((f_l<<8) + (buff[name_l+3]&0xff));
       f_l = ((f_l<<8) + (buff[name_l+2]&0xff));
-      //printf("%d\n", (f_l/256));
 
       if(f_l>0){
       char d [] = "/elice/project_file/server_files";
-      //FILE* fp = fopen(f_name, "w");
       char pathFile[260] = {};
       sprintf(pathFile, "%s/%s", d, f_name);
       FILE* fp = fopen(pathFile, "wb");
@@ -102,37 +97,26 @@ int main(int argc, char *argv[]){
       if ((fp==NULL)) return False;
       int f_ll = f_l;
       for(int r = 0; r < (f_ll/256); r++){
-        //printf("%d %d\n",i, recv_l);
-        //int f = fputs(buff, fp);
-        //printf("%ld ",ftell(fp));
         memset(buff, 0x00, sizeof(buff));
         recv_l = recv(clnt_sock, buff, 256, 0);
         for(int k = 0 ; k < sizeof(buff); k++){
             fputc(buff[k], fp);
-            //printf("%d %c\n",k, buff[k]);
         }
-        //printf("%d %s\n",i, buff);
-        //printf("%ld ",ftell(fp));
         f_l = f_l - 256;
-        //printf("fl %d\n", f_l);
         i++;
       }
-      //printf("f_fl %d\n", f_l);
       memset(buff, 0x00, sizeof(buff));
       recv_l = recv(clnt_sock, buff, f_l, 0);
       if(f_l > 0){
         for (int j = 0; j<f_l; j++){
           fputc(buff[j], fp);
-          //printf("%d %d %c\n", recv_l,j, buff[j]);
         }          
       }
 
       fseek(fp, 0, SEEK_END);
       size_t fileLen=ftell(fp);
       fseek(fp, 0, SEEK_SET);
-      //printf("%ld\n", fileLen);
       fclose(fp);
-      //remove(pathFile);   
       }
     }
 
@@ -146,15 +130,10 @@ int main(int argc, char *argv[]){
       char f_name [100] = {};
       for(int i = 0; buff[i] != '\0'; i++){
           f_name[i] = buff[i];
-          //printf("%c", f_name[i]);
-          //printf("%d\n", i);
       }
       char d [] = "/elice/project_file/server_files";
-      //FILE* fp = fopen(f_name, "w");
       char pathFile[260] = {};
       sprintf(pathFile, "%s/%s", d, f_name);
-      //printf("%s\n", pathFile);
-      //printf("%ld", strlen(f_name));
       FILE* fp = fopen(pathFile, "rb");
       if ((fp == NULL)) return False;
       int send_l = 0;
@@ -163,7 +142,6 @@ int main(int argc, char *argv[]){
       fseek(fp, 0, SEEK_END);
       fileLen = ftell(fp);
       fseek(fp, 0, SEEK_SET);
-      //printf("%d\n", fileLen);
     
       //파일 크기 보내기
       char cmd[4] = {};
@@ -180,15 +158,11 @@ int main(int argc, char *argv[]){
             while(read_num > 0){
                 memset(buff, 0x00, sizeof(buff));
                 read_num = fread(buff, sizeof(char), 256, fp);
-                //printf("%ld ",ftell(fp));
                 if((send_l = send(clnt_sock, buff, read_num, 0))==-1) return False;
-                //printf(" %d %s\n",i, buff);
                 i++;
             }
     fclose(fp);
     }
-    //fclose(fp);
-    //ls();
     remove(pathFile);
     }
 
