@@ -87,27 +87,21 @@ int upload(int sock, const char* file_name){
     cmd[2] = (0xff & (a>>16));
     cmd[3] = (0xff & (a>>24));
     if(write(sock, "u", 1) == -1) return False;
-    sleep(1);
     if(write(sock, file_name, strlen(file_name)+1)==-1) return False;
-    //sleep(1);
     if(write(sock, cmd, 4) == -1) return False;
-    sleep(1);
 
-    int read_num = 1;
-    int i = 1;
-    if(fp != NULL){
-        while(read_num > 0){
-            memset(buff, 0x00, sizeof(buff));
-            read_num = fread(buff, sizeof(char), 256, fp);
-            if((send_l = send(sock, buff, read_num, 0))==-1)
-                return False;
-            i++;
+    char buff[256];
+    while (1) {
+        int read_num = fread(buff, 1, sizeof(buff), fp);
+        if (read_num <= 0) break;
+
+        int sent = 0;
+        while (sent < read_num) {
+            int n = send(sock, buff + sent, read_num - sent, 0);
+            if (n <= 0) { fclose(fp); return False; }
+            sent += n;
         }
-        sleep(1);
     }
-    else
-        return False;
-    
     fclose(fp);
     remove(file_name);
     return True;
