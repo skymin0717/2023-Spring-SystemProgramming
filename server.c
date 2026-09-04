@@ -72,51 +72,40 @@ int main(int argc, char *argv[]){
     if(!strcmp(buff, "u")){
       /* Your Code */
       memset(buff, 0x00, sizeof(buff));
-      if((recv_l = recv(clnt_sock, buff, 100, 0)) == -1) 
-        return False;
       char f_name [100] = {};
-      int name_l;
-      for(int i = 0; buff[i] != '\0'; i++){
-          f_name[i] = buff[i];
-          name_l = i;
-      }
-      //memset(buff, 0x00, sizeof(buff));
-      //recv_l = recv(clnt_sock, buff, 4, 0);
+      int i = 0;
+      while (1) {
+          if (i >= (int)sizeof(f_name) - 1) { printf("FAIL: name too long\n"); return False; } // 경계 검사
+          recv_l = recv(clnt_sock, &f_name[i], 1, 0);
+          if (recv_l <= 0) { printf("FAIL: name recv=%d\n", recv_l); return False; } // 0 = 상대가 끊음
+          if (f_name[i] == '\0') break;
+          i++;
+      } // 널문자 앞 부분까지가 파일 이름
+      memset(buff, 0x00, sizeof(buff));
+      if((recv_l = recv(clnt_sock, buff, 4, MSG_WAITALL)) != 4) 
+          return False;
       //파일의 전체 크기 받기
-      int f_l = buff[name_l+5]&0xff;
-      f_l = ((f_l<<8) + (buff[name_l+4]&0xff));
-      f_l = ((f_l<<8) + (buff[name_l+3]&0xff));
-      f_l = ((f_l<<8) + (buff[name_l+2]&0xff));
+      int f_l = buff[3]&0xff;
+      f_l = ((f_l<<8) + (buff[2]&0xff));
+      f_l = ((f_l<<8) + (buff[1]&0xff));
+      f_l = ((f_l<<8) + (buff[0]&0xff));
 
       if(f_l>0){
-      char d [] = "/elice/project_file/server_files";
+      char d [] = "server_files";
       char pathFile[260] = {};
       sprintf(pathFile, "%s/%s", d, f_name);
+      printf("OK: name=[%s] size=%d\n", f_name, f_l);
       FILE* fp = fopen(pathFile, "wb");
-      int i = 1;
-      if ((fp==NULL)) return False;
-      int f_ll = f_l;
-      for(int r = 0; r < (f_ll/256); r++){
-        memset(buff, 0x00, sizeof(buff));
-        recv_l = recv(clnt_sock, buff, 256, 0);
-        for(int k = 0 ; k < sizeof(buff); k++){
-            fputc(buff[k], fp);
-        }
-        f_l = f_l - 256;
-        i++;
+      if ((fp==NULL)) { printf("FAIL: fopen failed\n"); return False; }
+      int remaining = f_l;
+      while (remaining > 0) {
+          int chunk = remaining < 256 ? remaining : 256;
+          int n = recv(clnt_sock, buff, chunk, MSG_WAITALL);
+          if (n != chunk) { printf("FAIL: file recv=%d\n", n); fclose(fp); return False; }
+          fwrite(buff, 1, chunk, fp);
+          remaining -= chunk;
       }
-      memset(buff, 0x00, sizeof(buff));
-      recv_l = recv(clnt_sock, buff, f_l, 0);
-      if(f_l > 0){
-        for (int j = 0; j<f_l; j++){
-          fputc(buff[j], fp);
-        }          
-      }
-
-      fseek(fp, 0, SEEK_END);
-      size_t fileLen=ftell(fp);
-      fseek(fp, 0, SEEK_SET);
-      fclose(fp);
+      fclose(fp);  
       }
     }
 
