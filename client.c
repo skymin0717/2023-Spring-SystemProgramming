@@ -117,12 +117,10 @@ int download(int sock, const char* file_name){
     char buff[256] = {};
 
     if(write(sock, "d", 1) == -1) return False;
-    sleep(1);
     if(write(sock, file_name, strlen(file_name)+1)==-1) return False;
-    //sleep(1);
 
     memset(buff, 0x00, sizeof(buff));
-    if((recv_l = recv(sock, buff, 100, 0)) == -1) 
+    if((recv_l = recv(sock, buff, 4, MSG_WAITALL)) != 4) 
         return False;
       //파일의 전체 크기 받기
     int f_l = buff[3]&0xff;
@@ -131,35 +129,18 @@ int download(int sock, const char* file_name){
     f_l = ((f_l<<8) + (buff[0]&0xff));
 
     if(f_l>0){
-      char d [] = "/elice/project_file/client_files";
-      //FILE* fp = fopen(f_name, "w");
+      char d [] = "client_files";
       char pathFile[260] = {};
       sprintf(pathFile, "%s/%s", d, file_name);
       FILE* fp = fopen(pathFile, "wb");
-      //printf("%s\n", pathFile);
-      int i = 1;
       if ((fp==NULL)) return False;
-      int f_ll = f_l;
-      for(int r = 0; r < (f_ll/256); r++){
-        memset(buff, 0x00, sizeof(buff));
-        recv_l = recv(sock, buff, 256, 0);
-        for(int k = 0 ; k < sizeof(buff); k++){
-            fputc(buff[k], fp);
-        }
-        f_l = f_l - 256;
-        i++;
+      int remaining = f_l;
+      while (remaining > 0) {
+          int chunk = remaining < 256 ? remaining : 256;
+          if (recv(sock, buff, chunk, MSG_WAITALL) != chunk) { fclose(fp); return False; }
+          fwrite(buff, 1, chunk, fp);
+          remaining -= chunk;
       }
-      memset(buff, 0x00, sizeof(buff));
-      recv_l = recv(sock, buff, f_l, 0);
-      if(f_l >= 0){
-        for (int j = 0; j<f_l; j++){
-          fputc(buff[j], fp);
-        }          
-      }
-      sleep(1);
-      fseek(fp, 0, SEEK_END);
-      size_t fileLen=ftell(fp);
-      fseek(fp, 0, SEEK_SET);
       fclose(fp);
       return True;        
     }
@@ -172,10 +153,6 @@ int download(int sock, const char* file_name){
 // Terminate function should send the terminate signal to server.
 void terminate(int sock){
   /* Your Code */
-    int send_l;
-    char buff[256] = {};
-    if(write(sock, "t", 1) != -1){
-        send_l = send(sock, buff, 256, 0);
-    }
+    write(sock, "t", 1);
     close(sock);
 }
